@@ -6,6 +6,17 @@ import ProjectUpdateLogModel from "./api/projects/projectUpdateLog.model.js";
 // 메모리에 활성 Y.Doc 인스턴스를 저장하는 Map (이전과 동일)
 const ydocs = new Map<string, Y.Doc>();
 
+export const clearYDocFromMemory = (projectId: string) => {
+  if (ydocs.has(projectId)) {
+    const doc = ydocs.get(projectId);
+    doc?.destroy(); // Y.Doc 인스턴스 자체도 파괴하여 메모리 누수 방지
+    ydocs.delete(projectId);
+    console.log(
+      `[YJS] Cleared Y.Doc cache for project ${projectId} from memory.`
+    );
+  }
+};
+
 /**
  * DB에 기록된 모든 업데이트 로그를 재생하여 Y.Doc을 복원합니다.
  */
@@ -21,18 +32,17 @@ export const loadYDoc = async (projectId: string): Promise<Y.Doc> => {
 
   // 3. DB에서 해당 projectId를 가진 모든 업데이트 로그를 조회합니다.
   // createdAt 필드를 기준으로 오름차순 정렬하여 가장 오래된 업데이트부터 가져옵니다.
-  const updates = await ProjectUpdateLogModel.find({ project: projectId }).sort(
-    {
-      createdAt: 1,
-    }
-  );
+  const updates = await ProjectUpdateLogModel.find({
+    project: projectId,
+    status: "active", // 'active' 상태의 로그만 조회합니다.
+  }).sort({
+    createdAt: 1,
+  });
 
   if (updates.length > 0) {
     console.log(
-      `[YJS] Loading ${updates.length} updates for project ${projectId} from DB...`
+      `[YJS] Loading ${updates.length} active updates for project ${projectId} from DB...`
     );
-    // 4. Y.Doc을 잠그고(transaction), 모든 업데이트를 순차적으로 적용합니다.
-    // 여러 업데이트를 한번에 적용할 때는 transaction으로 묶는 것이 효율적입니다.
     doc.transact(() => {
       for (const up of updates) {
         Y.applyUpdate(doc, up.updateData);
@@ -43,7 +53,6 @@ export const loadYDoc = async (projectId: string): Promise<Y.Doc> => {
     );
   }
 
-  // 5. 복원된 문서를 메모리에 저장하고 반환합니다.
   ydocs.set(projectId, doc);
   return doc;
 };

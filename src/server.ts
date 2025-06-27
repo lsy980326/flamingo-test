@@ -6,6 +6,7 @@ import "dotenv/config";
 import jwt from "jsonwebtoken";
 import passport from "passport";
 import session from "express-session";
+import { Server } from "socket.io";
 
 import authRouter from "./api/auth/auth.routes.js";
 import usersRouter from "./api/users/users.routes.js";
@@ -26,7 +27,7 @@ const corsOptions = {
 };
 
 // --- Socket.IO 서버 생성 및 연결 ---
-const io = new Server(server, {
+export const io = new Server(server, {
   cors: corsOptions,
 });
 

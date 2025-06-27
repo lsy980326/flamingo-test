@@ -48,3 +48,29 @@ export const addMemberToProject = catchAsync(
     res.status(200).json({ success: true, data: updatedProject });
   }
 );
+
+export const rollbackProjectHistory = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { projectId } = req.params;
+    const { timestamp } = req.body;
+
+    if (!timestamp || isNaN(new Date(timestamp).getTime())) {
+      return next(new AppError("유효한 타임스탬프를 제공해야 합니다.", 400));
+    }
+
+    // TODO: 이 작업을 수행할 권한이 있는지 확인하는 로직 추가 (예: 프로젝트 소유자만)
+
+    const result = await projectService.rollbackProject(projectId, timestamp);
+    res.status(200).json({ success: true, data: result });
+  }
+);
+
+export const getHistory = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { projectId } = req.params;
+    const history = await projectService.getProjectHistory(projectId);
+    res
+      .status(200)
+      .json({ success: true, count: history.length, data: history });
+  }
+);
