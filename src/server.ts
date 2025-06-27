@@ -13,7 +13,7 @@ import projectsRouter from "./api/projects/projects.routes.js";
 import { connectDB } from "./config/db.js";
 import "./config/passport.js";
 import { errorHandler } from "./middleware/error.middleware.js";
-import { setupYJSEvents, saveAllYDocs } from "./yjs-setup.js";
+import { setupYJSEvents } from "./yjs-setup.js";
 
 // --- 초기화 ---
 connectDB();
@@ -101,10 +101,10 @@ io.on("connection", (socket) => {
 });
 
 // --- 주기적인 DB 저장 로직 ---
-const SAVE_INTERVAL = 30000; // 30초
-setInterval(() => {
-  saveAllYDocs();
-}, SAVE_INTERVAL);
+// const SAVE_INTERVAL = 30000; // 30초
+// setInterval(() => {
+//   saveAllYDocs();
+// }, SAVE_INTERVAL);
 
 // --- 전역 에러 핸들러 및 서버 실행 ---
 app.use(errorHandler);
