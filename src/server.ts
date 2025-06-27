@@ -9,10 +9,11 @@ import session from "express-session";
 
 import authRouter from "./api/auth/auth.routes.js";
 import usersRouter from "./api/users/users.routes.js";
+import projectsRouter from "./api/projects/projects.routes.js";
 import { connectDB } from "./config/db.js";
 import "./config/passport.js";
 import { errorHandler } from "./middleware/error.middleware.js";
-import { setupYJSEvents } from "./yjs-setup.js";
+import { setupYJSEvents, saveAllYDocs } from "./yjs-setup.js";
 
 // --- 초기화 ---
 connectDB();
@@ -24,6 +25,7 @@ const corsOptions = {
   credentials: true,
 };
 
+// --- Socket.IO 서버 생성 및 연결 ---
 const io = new Server(server, {
   cors: corsOptions,
 });
@@ -46,6 +48,7 @@ app.use(passport.session());
 // --- 라우터 등록 ---
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/projects", projectsRouter);
 
 // --- Socket.IO 인증 미들웨어 ---
 io.use((socket, next) => {
@@ -96,6 +99,12 @@ io.on("connection", (socket) => {
   // YJS 이벤트 핸들러 설정
   setupYJSEvents(socket);
 });
+
+// --- 주기적인 DB 저장 로직 ---
+const SAVE_INTERVAL = 30000; // 30초
+setInterval(() => {
+  saveAllYDocs();
+}, SAVE_INTERVAL);
 
 // --- 전역 에러 핸들러 및 서버 실행 ---
 app.use(errorHandler);
